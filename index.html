@@ -940,7 +940,8 @@ async function recordVideo() {
   const chunks = []; rec.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
   const stopped = new Promise(r => rec.onstop = r);
   S.onDone = () => { if (A.rec) { const n = A.C.currentTime; A.rec.gain.setValueAtTime(1, n); A.rec.gain.linearRampToValueAtTime(0, n + .45); } setTimeout(() => rec.state !== 'inactive' && rec.stop(), 500); };
-  rec.start(250);
+  /* no timeslice: Chrome then writes the full duration into the MP4 header on stop; with one it stays at the first fragment (~5 s) */
+  rec.start();
   await stopped; S.rec = null; stream.getTracks().forEach(t => { if (t.kind === 'video') t.stop(); });
   const type = mime.split(';')[0];
   showResult(new Blob(chunks, { type }), `loykrathong.${type.includes('mp4') ? 'mp4' : 'webm'}`, 'video');
