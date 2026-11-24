@@ -963,7 +963,11 @@ $('save').onclick = async () => {
     if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); toast('แชร์แล้ว'); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
   let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) {}
-  if (!dl) { toast('บันทึกอัตโนมัติไม่ได้ในหน้านี้ กดค้างที่รูปหรือวิดีโอเพื่อบันทึก'); return; }
+  if (!dl) {
+    if (window.claude) { toast('บันทึกอัตโนมัติไม่ได้ในหน้านี้ กดค้างที่รูปหรือวิดีโอเพื่อบันทึก'); return; }
+    const a = document.createElement('a'); a.href = lastUrl; a.download = pending.filename; document.body.appendChild(a); a.click(); a.remove();
+    toast('บันทึกแล้ว เปิดจากคลังภาพไปลง Story ได้เลย'); return;
+  }
   try { await dl.save({ filename: pending.filename, data: pending.blob }); toast('บันทึกแล้ว เปิดจากคลังภาพไปลง Story ได้เลย'); }
   catch (e) { toast(e && e.code === 'declined' ? 'ยกเลิกการบันทึก' : 'บันทึกไม่สำเร็จ กดค้างที่รูปหรือวิดีโอเพื่อบันทึก'); }
 };
@@ -1004,7 +1008,7 @@ function rebuild() {
   const all = new Map();
   for (const items of COMM.remote.values()) for (const it of items) if (validItem(it)) all.set(it.id, clean(it));
   for (const it of COMM.mine) if (!all.has(it.id)) all.set(it.id, clean(it));
-  COMM.total = all.size;
+  COMM.total = COMM.totalServer != null ? COMM.totalServer + COMM.mine.filter(m => !all.has(m.id) || !(COMM.remote.get('sb') || []).some(r => r.id === m.id)).length : all.size;
   const real = [...all.values()].sort((a, b) => b.ts - a.ts).slice(0, 14);
   COMM.list = real;
   $('statN').textContent = COMM.total.toLocaleString('th-TH');
@@ -1037,35 +1041,61 @@ function drawCommunity(t) {
     glow(b.x, b.y - 60 * k, 180, '255,220,140', .4 * (1 - k));
   }
 }
+/* ---------- public backend: Supabase, used when the page runs outside claude.ai (GitHub Pages) ---------- */
+const SUPABASE = { url: '', anonKey: '' };
+const SB = { on: false };
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+function clientId() { let id = LS.get('lk.client', null); if (typeof id !== 'string' || id.length < 8) { id = uuid(); LS.set('lk.client', id); } return id; }
+async function sbFetch(path, opt = {}) {
+  const r = await fetch(SUPABASE.url.replace(/\/$/, '') + '/rest/v1/' + path, { ...opt, headers: { apikey: SUPABASE.anonKey, Authorization: 'Bearer ' + SUPABASE.anonKey, 'Content-Type': 'application/json', ...(opt.headers || {}) } });
+  if (!r.ok && r.status !== 409) throw new Error('supabase ' + r.status);
+  return r;
+}
+async function sbPoll() {
+  try {
+    const rows = await (await sbFetch('krathong_feed?select=id,type,name,wish,created_at,amen_count&order=created_at.desc&limit=40')).json();
+    COMM.remote.clear(); COMM.counts.clear();
+    COMM.remote.set('sb', rows.map(x => ({ id: x.id, type: x.type, name: x.name, wish: x.wish, ts: Date.parse(x.created_at) })));
+    for (const x of rows) COMM.counts.set(x.id, x.amen_count | 0);
+    const head = await sbFetch('krathongs?select=id', { method: 'HEAD', headers: { Prefer: 'count=exact' } });
+    const n = Number((head.headers.get('content-range') || '').split('/')[1]); if (Number.isFinite(n)) COMM.totalServer = n;
+    COMM.serverAmens = new Set([...COMM.myAmens].filter(id => COMM.counts.has(id)));
+    rebuild(); renderWish();
+  } catch (e) {}
+}
 function updateNote() {
   $('shareNote').textContent = COMM.ready && !COMM.canWrite
     ? 'ตอนนี้กระทงของคุณจะลอยอยู่บนเครื่องนี้เท่านั้น คนอื่นยังไม่เห็น'
     : 'ชื่อและคำอธิษฐานจะแสดงให้ทุกคนที่เปิดหน้านี้เห็น';
 }
 function queue(fn) { COMM.wq = COMM.wq.then(fn).catch(e => { if (e && (e.code === 'invalid_argument' || e.code === 'revoked' || e.code === 'not_granted')) { COMM.canWrite = false; updateNote(); } else if (e && e.code === 'quota_exceeded') toast('แม่น้ำเต็มแล้ว กระทงใบนี้ลอยอยู่บนเครื่องของคุณเท่านั้น'); }); }
-function writeMine() {
+function writeMine(it) {
+  if (SB.on) { if (it) queue(() => sbFetch('krathongs', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ id: it.id, type: it.type, name: it.name, wish: it.wish }) }).then(sbPoll)); return; }
   if (!COMM.db || !COMM.canWrite) return;
   const m = new Map(); for (const it of [...(COMM.remote.get(COMM.uid) || []), ...COMM.mine]) if (validItem(it)) m.set(it.id, clean(it));
   const items = [...m.values()].sort((a, b) => a.ts - b.ts).slice(-5);
   queue(() => COMM.db.doc('krathongs/' + COMM.uid).set({ items }));
 }
-function writeAmens() {
+function writeAmens(id) {
+  if (SB.on) { if (id && !id.startsWith('mock-')) queue(() => sbFetch('amens', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ krathong_id: id, client_id: clientId() }) }).then(() => { COMM.counts.set(id, (COMM.counts.get(id) || 0) + 1); COMM.serverAmens.add(id); renderWish(); })); return; }
   if (!COMM.db || !COMM.canWrite) return;
   const ids = [...new Set([...COMM.serverAmens, ...COMM.myAmens])].filter(id => !id.startsWith('mock-')).slice(-300);
   queue(() => COMM.db.doc('amens/' + COMM.uid).set({ ids }));
 }
 function addMine(info) {
   const [x, y] = mainPos(1, 0);
-  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), type: TYPES[info.type].id, name: info.name, wish: info.wish, ts: Date.now() };
+  const it = { id: uuid(), type: TYPES[info.type].id, name: info.name, wish: info.wish, ts: Date.now() };
   COMM.mine = [...COMM.mine, it].slice(-5);
   COMM.anchor[it.id] = { sx: Math.round(x), y: Math.round(y) };
   const keep = new Set(COMM.mine.map(m => m.id)); for (const k in COMM.anchor) if (!keep.has(k)) delete COMM.anchor[k];
   LS.set('lk.mine', COMM.mine); LS.set('lk.anchor', COMM.anchor);
-  rebuild(); writeMine();
+  rebuild(); writeMine(it);
 }
 async function initCommunity() {
   rebuild(); updateNote();
-  const cl = window.claude; if (!cl || typeof cl.use !== 'function') { COMM.ready = true; updateNote(); return; }
+  const cl = window.claude, inClaude = !!(cl && typeof cl.use === 'function');
+  if (!inClaude && SUPABASE.url && SUPABASE.anonKey) { SB.on = true; COMM.ready = true; COMM.canWrite = true; updateNote(); sbPoll(); setInterval(() => { if (!document.hidden) sbPoll(); }, 15000); return; }
+  if (!inClaude) { COMM.ready = true; updateNote(); return; }
   let db = null, user = null;
   try { [db, user] = await Promise.all([cl.use('db'), cl.use('user')]); } catch (e) {}
   COMM.ready = true;
@@ -1103,7 +1133,7 @@ $('wmAmen').onclick = () => {
   if (!wishItem || COMM.myAmens.has(wishItem.id)) return;
   const id = wishItem.id; COMM.myAmens.add(id); LS.set('lk.amens', [...COMM.myAmens].slice(-300));
   const h = COMM.hits.find(x => x.it.id === id); if (h) COMM.bursts.push({ x: h.x, y: h.y, born: performance.now(), seed: Math.random() * 6 });
-  chime(); renderWish(); writeAmens();
+  chime(); renderWish(); writeAmens(id);
 };
 function toLogical(e) { const r = cv.getBoundingClientRect(), d = cv.width / r.width; return [(e.clientX - r.left) * d / VIEW.k, (e.clientY - r.top) * d / VIEW.k - VIEW.oy]; }
 function hitAt(e) { const [x, y] = toLogical(e); for (let i = COMM.hits.length - 1; i >= 0; i--) { const h = COMM.hits[i]; if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) return h; } return null; }
