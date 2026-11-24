@@ -1047,7 +1047,7 @@ const SB = { on: false };
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
 function clientId() { let id = LS.get('lk.client', null); if (typeof id !== 'string' || id.length < 8) { id = uuid(); LS.set('lk.client', id); } return id; }
 async function sbFetch(path, opt = {}) {
-  const r = await fetch(SUPABASE.url.replace(/\/$/, '') + '/rest/v1/' + path, { ...opt, headers: { apikey: SUPABASE.anonKey, Authorization: 'Bearer ' + SUPABASE.anonKey, 'Content-Type': 'application/json', ...(opt.headers || {}) } });
+  const r = await fetch(SUPABASE.url.replace(/\/$/, '') + '/rest/v1/' + path, { ...opt, headers: { apikey: SUPABASE.anonKey, ...(SUPABASE.anonKey.startsWith('eyJ') ? { Authorization: 'Bearer ' + SUPABASE.anonKey } : {}), 'Content-Type': 'application/json', ...(opt.headers || {}) } });
   if (!r.ok && r.status !== 409) throw new Error('supabase ' + r.status);
   return r;
 }
