@@ -198,6 +198,16 @@ function moon() {
   glow(x, y, 330, '255,235,190', .32); ctx.fillStyle = '#fff1c9'; ell(x, y, r, r); ctx.fill();
   ctx.fillStyle = 'rgba(214,180,120,.32)'; ell(x - 24, y - 12, 18, 16); ctx.fill(); ell(x + 26, y + 22, 24, 22); ctx.fill(); ell(x + 6, y - 36, 12, 11); ctx.fill();
 }
+/* the sky in the water: the Ferris wheel and the lowest lanterns mirrored below the bank */
+function skyReflect(t) {
+  if (WIDE) { ctx.save(); ctx.globalAlpha = .22; ctx.translate(0, 2 * HY); ctx.scale(1, -1); wheel(t); ctx.restore(); }
+  const nL = Math.min(LANT.length, Math.round(28 * LW / 1080));
+  for (let li = 0; li < nL; li++) {
+    const l = LANT[li], y = HY - 10 - ((l.off + t * l.sp) % 1500); if (y < HY - 520) continue;
+    const ry = HY + (HY - y) * .55, x = l.x * LW + Math.sin(t * .5 + l.p) * 24 + Math.sin(t * 2 + li) * 3, k = 1 - (HY - y) / 520;
+    glow(x, ry, l.s * 3, '255,170,60', .25 * k); ctx.fillStyle = `rgba(255,214,140,${.35 * k})`; ell(x, ry, l.s * .5, l.s * .25); ctx.fill();
+  }
+}
 function lanterns(t) {
   const nL = Math.min(LANT.length, Math.round(28 * LW / 1080));
   for (let li = 0; li < nL; li++) { const l = LANT[li];
@@ -306,6 +316,13 @@ function shop() {
   ctx.strokeStyle = '#f3c46a'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, deck - 200); ctx.quadraticCurveTo(x + 4, deck - 222, x + 16, deck - 220); ctx.stroke(); ctx.lineCap = 'butt';
   for (const dx of [-112, 112]) { ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + dx, deck - 120); ctx.lineTo(x + dx, deck - 104); ctx.stroke(); glow(x + dx, deck - 92, 46, '255,120,80', .55); ctx.fillStyle = '#e2483a'; ell(x + dx, deck - 92, 10, 13); ctx.fill(); ctx.fillStyle = '#ffd166'; ctx.fillRect(x + dx - 6, deck - 106, 12, 3); }
   glow(x, deck - 70, 160, '255,180,100', .3);
+  const eY = deck - 116;
+  festoon(x - 112, x + 112, eY, 7, ['255,214,120', '255,120,170', '140,220,255', '170,255,190'], true);
+  if (!WIDE) { /* phones have no bank poles: string lights and bunting from the eave to one short pole */
+    const px = x + 250; ctx.fillStyle = '#2e1c14'; ctx.fillRect(px - 3, eY - 4, 6, deck - eY + 4);
+    festoon(x + 118, px, eY - 2, 16, ['237,41,57', '255,255,255', '45,42,74'], false);
+    festoon(x + 118, px, eY + 26, 14, ['255,214,120', '255,140,90', '140,220,255'], true);
+  }
 }
 /* bank decorations: poles strung with festoon lights and Thai-flag bunting, kept clear of the temple */
 function festoon(x0, x1, y, sag, cols, bulb) {
@@ -572,7 +589,7 @@ function render(c2d, view, t, o) {
   px(); ctx.drawImage(L.back, 0, 0);
   vt(); fireworks(t); lanterns(t); wheel(t);
   px(); ctx.drawImage(L.temple, 0, 0); ctx.drawImage(L.river, 0, 0); ctx.drawImage(L.shop, 0, 0);
-  vt(); river(t); fwReflect(t); others(t);
+  vt(); river(t); skyReflect(t); fwReflect(t); others(t);
   if (!o.exp) drawCommunity(t);
   const info = o.info, playing = o.mode === 'playing' || o.mode === 'done';
   if (playing && info) {
