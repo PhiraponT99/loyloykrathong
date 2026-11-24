@@ -285,58 +285,41 @@ function city() {
     if (b.lit > .4) { ctx.fillStyle = 'rgba(255,214,150,.45)'; for (let yy = HY - 26 - b.h + 10; yy < HY - 40; yy += 16) for (let xx = x + 6; xx < x + b.w - 6; xx += 14) if (((xx * 7 + yy * 3) | 0) % 5 === 0) ctx.fillRect(xx, yy, 4, 5); }
   }
 }
-/* temple-fair riverbank: market stalls with striped awnings, festoon lights, Thai-flag bunting and strolling people */
-const AWN = ['#d1453b', '#2f6fb5', '#e0a526', '#2f9a6a', '#c2407f'];
-function stall(x, by, w, col, r) {
-  const h = w * .55, L = x - w / 2;
-  ctx.fillStyle = '#24162a'; ctx.fillRect(L, by - h, w, h);
-  const g = ctx.createLinearGradient(0, by - h, 0, by); g.addColorStop(0, 'rgba(255,200,120,.95)'); g.addColorStop(1, 'rgba(255,140,60,.65)');
-  ctx.fillStyle = g; ctx.fillRect(L + 5, by - h * .82, w - 10, h * .56);
-  for (let i = 0; i < 5; i++) { ctx.fillStyle = ['#ff6b6b', '#ffd166', '#7bdff2', '#ff9ec2', '#b8f2a0'][(i + Math.floor(r * 5)) % 5]; ctx.fillRect(L + 10 + i * (w - 20) / 5, by - h * .42, (w - 20) / 5 - 4, h * .12); }
-  ctx.fillStyle = '#3b2418'; ctx.fillRect(L, by - h * .28, w, h * .28);
-  const ah = h * .34, ay = by - h - ah * .15, n = 6, sw = (w + 14) / n;
-  for (let i = 0; i < n; i++) {
-    ctx.fillStyle = i % 2 ? '#f4efe6' : col; ctx.beginPath();
-    ctx.moveTo(L - 7 + i * sw + sw * .15, ay - ah * .35); ctx.lineTo(L - 7 + (i + 1) * sw - sw * .15, ay - ah * .35);
-    ctx.lineTo(L - 7 + (i + 1) * sw, ay + ah * .65); ctx.arc(L - 7 + i * sw + sw / 2, ay + ah * .65, sw / 2, 0, Math.PI); ctx.closePath(); ctx.fill();
-  }
-  ctx.fillStyle = 'rgba(255,200,120,.35)'; ctx.fillRect(L - 7, ay + ah * .65, w + 14, 3);
+/* one wooden riverside shop on stilts that sells to passing boats, with a vendor boat moored beside it */
+const shopX = () => WIDE ? CX - LW * .3 : Math.max(95, CX - 460);
+function shop() {
+  const x = shopX(), deck = HY - 4;
+  ctx.fillStyle = '#2e1c14'; for (const dx of [-100, -50, 0, 50, 100]) ctx.fillRect(x + dx - 4, deck, 8, 62);
+  ctx.fillStyle = '#5a3a22'; ctx.fillRect(x - 118, deck - 6, 236, 12);
+  ctx.fillStyle = '#4a2f1c'; for (let k = 0; k < 4; k++) ctx.fillRect(x + 104 + k * 9, deck + 6 + k * 12, 18, 4);
+  const body = ctx.createLinearGradient(0, deck - 128, 0, deck); body.addColorStop(0, '#7c4c2a'); body.addColorStop(1, '#5d371e');
+  ctx.fillStyle = body; ctx.fillRect(x - 92, deck - 128, 184, 122);
+  ctx.strokeStyle = 'rgba(40,20,10,.35)'; ctx.lineWidth = 1.5; for (let yy = deck - 118; yy < deck - 8; yy += 12) { ctx.beginPath(); ctx.moveTo(x - 92, yy); ctx.lineTo(x + 92, yy); ctx.stroke(); }
+  const win = ctx.createLinearGradient(0, deck - 108, 0, deck - 40); win.addColorStop(0, '#ffcf80'); win.addColorStop(1, '#ff9a4a');
+  ctx.fillStyle = win; ctx.fillRect(x - 74, deck - 108, 148, 64);
+  for (let r = 0; r < 2; r++) for (let i = 0; i < 7; i++) { ctx.fillStyle = ['#d1453b', '#2f9a6a', '#e0a526', '#2f6fb5', '#c2407f', '#8a5a2a', '#f4efe6'][(i + r * 3) % 7]; ctx.fillRect(x - 66 + i * 19, deck - 98 + r * 24, 13, 14); }
+  ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 4; for (const dx of [-40, 34]) { ctx.beginPath(); ctx.arc(x + dx, deck - 104, 8, .2, Math.PI - .2); ctx.stroke(); }
+  ctx.fillStyle = '#3b2418'; ctx.fillRect(x - 80, deck - 44, 160, 16);
+  ctx.fillStyle = '#e0a526'; for (let i = 0; i < 6; i++) ell(x - 60 + i * 24, deck - 48, 9, 6), ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 132, deck - 124); ctx.lineTo(x - 18, deck - 200); ctx.lineTo(x + 18, deck - 200); ctx.lineTo(x + 132, deck - 124); ctx.lineTo(x + 112, deck - 118); ctx.lineTo(x - 112, deck - 118); ctx.closePath();
+  ctx.fillStyle = '#6b2f1f'; ctx.fill(); ctx.strokeStyle = 'rgba(255,190,110,.55)'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.strokeStyle = '#f3c46a'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, deck - 200); ctx.quadraticCurveTo(x + 4, deck - 222, x + 16, deck - 220); ctx.stroke(); ctx.lineCap = 'butt';
+  for (const dx of [-112, 112]) { ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + dx, deck - 120); ctx.lineTo(x + dx, deck - 104); ctx.stroke(); glow(x + dx, deck - 92, 46, '255,120,80', .55); ctx.fillStyle = '#e2483a'; ell(x + dx, deck - 92, 10, 13); ctx.fill(); ctx.fillStyle = '#ffd166'; ctx.fillRect(x + dx - 6, deck - 106, 12, 3); }
+  glow(x, deck - 70, 160, '255,180,100', .3);
 }
-function festoon(x0, x1, y, sag, cols, bulb) {
-  ctx.strokeStyle = 'rgba(20,12,30,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, y); ctx.quadraticCurveTo((x0 + x1) / 2, y + sag * 2, x1, y); ctx.stroke();
-  const n = Math.max(2, Math.floor((x1 - x0) / 24));
-  for (let i = 1; i < n; i++) {
-    const k = i / n, bx = lerp(x0, x1, k), by = y + 4 * sag * k * (1 - k), c = cols[i % cols.length];
-    if (bulb) { glow(bx, by + 3, 16, c, .55); ctx.fillStyle = `rgb(${c})`; ell(bx, by + 4, 3.2, 4); ctx.fill(); }
-    else { ctx.fillStyle = `rgb(${c})`; ctx.beginPath(); ctx.moveTo(bx - 8, by); ctx.lineTo(bx + 8, by); ctx.lineTo(bx, by + 16); ctx.closePath(); ctx.fill(); }
-  }
-}
-function person(x, by, h, r) {
-  ctx.fillStyle = '#140c20';
-  ell(x, by - h * .88, h * .11, h * .12); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x - h * .16, by - h * .74); ctx.lineTo(x + h * .16, by - h * .74); ctx.lineTo(x + h * (r > .5 ? .2 : .12), by - h * .3); ctx.lineTo(x + h * .1, by); ctx.lineTo(x - h * .1, by); ctx.lineTo(x - h * (r > .5 ? .2 : .12), by - h * .3); ctx.closePath(); ctx.fill();
-}
-function fair(cx) {
-  const r = rng(555), by = HY - 28, skip = 650 * TZ, stalls = [];
-  for (let x = 30; x < LW + 60;) {
-    if (x > cx - skip && x < cx + skip) { x = cx + skip; continue; }
-    const w = 96 + r() * 44; stalls.push([x + w / 2, w, AWN[Math.floor(r() * AWN.length)], r()]); x += w + 14 + r() * 40;
-  }
-  for (let i = 0; i + 1 < stalls.length; i++) { const a = stalls[i], b = stalls[i + 1]; if (b[0] - a[0] < 260) festoon(a[0], b[0], by - a[1] * .55 - 48, 10, i % 2 ? ['255,214,120', '255,140,90', '140,220,255'] : ['255,120,170', '255,230,150', '170,255,190'], true); }
-  for (let i = 0; i + 2 < stalls.length; i += 2) { const a = stalls[i], b = stalls[i + 2]; if (b[0] - a[0] < 520) festoon(a[0], b[0], by - a[1] * .55 - 90, 14, ['237,41,57', '255,255,255', '45,42,74'], false); }
-  for (const [x, w, c, rr] of stalls) stall(x, by, w, c, rr);
-  for (const [x, w, , rr] of stalls) for (let j = 0; j < 2; j++) if (r() < .7) person(x - w * .3 + r() * w * .6, by + 2, 46 + r() * 16, rr);
-}
-/* ferris wheel at the fair, wide screens only */
-function wheel(t) {
-  if (!WIDE) return;
-  const wx = CX - LW * .4, wy = HY - 230, R = 170, a0 = t * .12;
-  ctx.strokeStyle = 'rgba(40,24,60,.95)'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(wx - 90, HY - 28); ctx.lineTo(wx, wy); ctx.lineTo(wx + 90, HY - 28); ctx.stroke();
-  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,200,140,.55)'; ell(wx, wy, R, R); ctx.stroke();
-  ctx.lineWidth = 1.5; for (let i = 0; i < 16; i++) { const a = a0 + i / 16 * TAU; ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * R, wy + Math.sin(a) * R); ctx.stroke(); }
-  for (let i = 0; i < 32; i++) { const a = a0 + i / 32 * TAU, on = (Math.floor(t * 3) + i) % 3 === 0; ctx.fillStyle = on ? '#fff1b0' : ['#ff7aa8', '#7fd3ff', '#ffd166'][i % 3]; ell(wx + Math.cos(a) * R, wy + Math.sin(a) * R, 3.5, 3.5); ctx.fill(); }
-  for (let i = 0; i < 8; i++) { const a = a0 + i / 8 * TAU, cx = wx + Math.cos(a) * R, cy = wy + Math.sin(a) * R; ctx.fillStyle = AWN[i % AWN.length]; rrect(cx - 13, cy + 4, 26, 20, 5); ctx.fill(); ctx.fillStyle = 'rgba(255,220,150,.8)'; ctx.fillRect(cx - 8, cy + 9, 16, 6); }
-  glow(wx, wy, 60, '255,220,150', .5);
+/* the vendor's rowing boat, bobbing beside the shop */
+function boat(t) {
+  const x = shopX() + 190, y = HY + 58 + Math.sin(t * 1.3) * 3, tilt = Math.sin(t * 1.1) * .025;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  ctx.fillStyle = 'rgba(255,190,110,.12)'; ell(0, 14, 120, 14); ctx.fill();
+  ctx.fillStyle = '#4a2c18'; ctx.beginPath(); ctx.moveTo(-110, -16); ctx.quadraticCurveTo(-60, 14, 0, 14); ctx.quadraticCurveTo(60, 14, 110, -18); ctx.lineTo(96, -8); ctx.quadraticCurveTo(0, 2, -96, -6); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#7a4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-104, -14); ctx.quadraticCurveTo(0, -2, 104, -16); ctx.stroke();
+  for (let i = 0; i < 9; i++) { ctx.fillStyle = ['#ff9d0a', '#e2483a', '#9bd96e', '#ffd166', '#c2407f'][i % 5]; ell(-60 + i * 11, -12 - (i % 2) * 6, 7, 6); ctx.fill(); }
+  ctx.fillStyle = '#1a1020'; ctx.fillRect(32, -50, 22, 40); ell(43, -56, 9, 9); ctx.fill();
+  ctx.fillStyle = '#c9a36a'; ctx.beginPath(); ctx.moveTo(43, -76); ctx.lineTo(70, -56); ctx.lineTo(16, -56); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(52, -34); ctx.lineTo(96, 24); ctx.stroke();
+  glow(-80, -40, 50, '255,200,120', .55); ctx.fillStyle = '#ffd98a'; ell(-80, -40, 6, 8); ctx.fill(); ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-80, -48); ctx.lineTo(-80, -10); ctx.stroke();
+  ctx.restore();
 }
 const templeX = () => CX + 230 + (WIDE ? LW * .1 : 0);
 function temple(flip) {
@@ -346,7 +329,6 @@ function temple(flip) {
   if (!flip) { glow(cx, by - 220, 620, '255,200,90', .3); glow(cx, by - 80, 360, '255,230,160', .25); }
   ctx.fillStyle = '#0d2622';
   for (const tr of TREES) { const x = tr.x * LW; if (Math.abs(x - cx) < 360 * TZ) continue; tree(x, HY - 20, tr.h, tr.r); }
-  fair(cx);
   ctx.save(); ctx.translate(cx, HY); ctx.scale(TZ, TZ); ctx.translate(-cx, -HY);
   for (const [x, w, h] of [[cx - 125, 70, 210], [cx + 125, 70, 210]]) prang(x, by, w, h, true);
   for (const [x, w, h] of [[cx - 255, 100, 330], [cx + 255, 100, 330]]) prang(x, by, w, h, true);
@@ -365,7 +347,7 @@ function riverBase() {
   [[0, '#6b5398'], [.15, '#3d3278'], [.6, '#1a1648'], [1, '#07061c']].forEach(s => g.addColorStop(s[0], s[1]));
   ctx.fillStyle = g; ctx.fillRect(0, HY, LW, H - HY);
   ctx.fillStyle = '#04061a'; ctx.fillRect(0, H, LW, 1200);
-  ctx.globalAlpha = .3; temple(true); ctx.globalAlpha = 1;
+  ctx.globalAlpha = .3; temple(true); ctx.globalAlpha = .2; ctx.save(); ctx.translate(0, 2 * HY + 40); ctx.scale(1, -1); shop(); ctx.restore(); ctx.globalAlpha = 1;
 }
 function river(t) {
   for (let j = 0; j < 34; j++) {
@@ -569,9 +551,9 @@ function render(c2d, view, t, o) {
   UIZ = o.exp ? 1 : clamp(LW / 1500, 1, 1.45); KZ = 1; TZ = o.exp ? 1 : clamp(LW / 1900, 1, 1.18);
   const L = layers(c2d, view), vt = () => ctx.setTransform(view.k, 0, 0, view.k, 0, view.oy * view.k), px = () => ctx.setTransform(1, 0, 0, 1, 0, 0);
   px(); ctx.drawImage(L.back, 0, 0);
-  vt(); fireworks(t); lanterns(t); wheel(t);
-  px(); ctx.drawImage(L.temple, 0, 0); ctx.drawImage(L.river, 0, 0);
-  vt(); river(t); fwReflect(t); others(t);
+  vt(); fireworks(t); lanterns(t);
+  px(); ctx.drawImage(L.temple, 0, 0); ctx.drawImage(L.river, 0, 0); ctx.drawImage(L.shop, 0, 0);
+  vt(); river(t); fwReflect(t); boat(t); others(t);
   if (!o.exp) drawCommunity(t);
   const info = o.info, playing = o.mode === 'playing' || o.mode === 'done';
   if (playing && info) {
@@ -597,6 +579,7 @@ function layers(c2d, view) {
     back: mk(() => { sky(0); moon(); }),
     temple: mk(() => temple(false)),
     river: mk(riverBase),
+    shop: mk(shop),
     vig: mk(() => { const v = ctx.createRadialGradient(CX, H / 2, H * .35, CX, H / 2, Math.max(H, LW) * .75); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.4)'); ctx.fillStyle = v; ctx.fillRect(0, -1200, LW, H + 2400); }) };
   cvs._L = L; return L;
 }
