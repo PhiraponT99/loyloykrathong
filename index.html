@@ -85,12 +85,9 @@ textarea{min-height:84px;resize:vertical}
 <div class="toast" id="toast" role="status" aria-live="polite">แตะที่ไหนก็ได้เพื่อเปิดเพลง</div>
 
 <div class="bar" id="barIdle">
+  <button type="button" class="btn ghost" id="vid" hidden>บันทึกวิดีโอ</button>
+  <button type="button" class="btn ghost" id="png" hidden>บันทึกรูป</button>
   <button type="button" class="btn" id="open">ลอยกระทงของคุณ</button>
-</div>
-<div class="bar" id="barDone" hidden>
-  <button type="button" class="btn ghost" id="vid">บันทึกวิดีโอ</button>
-  <button type="button" class="btn ghost" id="png">บันทึกรูป</button>
-  <button type="button" class="btn" id="again">ลอยอีกใบ</button>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -553,7 +550,7 @@ function krathong(type, x, y, s, t, tilt) {
 /* ---------- captions ---------- */
 function card(info, a) {
   ctx.save(); ctx.globalAlpha = a;
-  const CC0 = WIDE ? CX - LW * .29 : CX, CW = WIDE ? Math.min(900, LW * .26) : Math.min(900, LW - 160), X = CC0 - CW / 2, Y = WIDE ? 300 : 320 + TOPY, CH = 330, CC = CC0, cat = TYPES[info.type].cat;
+  const CC0 = WIDE ? CX - LW * .29 : CX, CW = WIDE ? Math.min(900, LW * .26) : Math.min(900, LW - 160), X = CC0 - CW / 2, Y = WIDE ? 300 : 365 + TOPY, CH = 330, CC = CC0, cat = TYPES[info.type].cat;
   rrect(X, Y, CW, CH, 28); ctx.fillStyle = 'rgba(8,10,44,.6)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,214,140,.55)'; ctx.lineWidth = 2; ctx.stroke();
   const tag = ['ผู้ลอยกระทง', `400 26px ${SARA}`];
   txt(tag[0], CC, Y + 56, tag[1], 'rgba(255,225,170,.82)', 'center');
@@ -562,9 +559,12 @@ function card(info, a) {
   wrap(info.wish, CW - 90, `400 40px ${SARA}`, 3).forEach((l, i) => txt(l, CC, Y + 212 + i * 54, `400 40px ${SARA}`, '#ffffff', 'center'));
   ctx.restore();
 }
-function headline(sub) {
-  txt('ลอยกระทง ๒๕๖๙', CX, 232 + TOPY, `700 72px ${KANIT}`, '#fff3d2', 'center');
-  if (sub) txt('คืนวันเพ็ญเดือนสิบสอง', CX, 290 + TOPY, `400 30px ${SARA}`, 'rgba(255,240,210,.75)', 'center');
+/* ---------- logo: the festival mark, published beside the page as logo.png ---------- */
+const LOGO = new Image(); LOGO.src = 'logo.png';
+function headline() {
+  const h = 300, y = Math.max(50 + TOPY, VTOP + 30);
+  if (LOGO.complete && LOGO.naturalWidth) { const w = h * LOGO.naturalWidth / LOGO.naturalHeight; ctx.drawImage(LOGO, CX - w / 2, y, w, h); }
+  else txt('ลอยกระทง ๒๕๖๙', CX, y + 150, `700 72px ${KANIT}`, '#f0c46a', 'center');
 }
 function footer() {
   txt('คืนวันเพ็ญเดือนสิบสอง', CX, 1790, `600 36px ${KANIT}`, 'rgba(255,240,210,.9)', 'center');
@@ -579,11 +579,11 @@ function mainPos(q, t) { const x = lerp(CX - 210, CX + 160, q) + Math.sin(q * 5)
 /* scale the title and card up on wide screens, anchored at the top of the title */
 function zoomed(fn) { if (UIZ === 1) return fn(); ctx.save(); const ay = 170 + TOPY; ctx.translate(CX, ay); ctx.scale(UIZ, UIZ); ctx.translate(-CX, -ay); fn(); ctx.restore(); }
 /* live view leaves room at the top for the counter and sound button; the story export does not need it */
-let TOPY = 0, UIZ = 1, KZ = 1, TZ = 1, WIDE = false;
+let VTOP = 0, TOPY = 0, UIZ = 1, KZ = 1, TZ = 1, WIDE = false;
 function render(c2d, view, t, o) {
   const prev = ctx; ctx = c2d; LW = view.lw; CX = LW / 2;
   TOPY = o.exp ? 0 : Math.max(0, Math.round((view.topSafe || 0) - 160));
-  WIDE = !o.exp && LW >= 2400;
+  WIDE = !o.exp && LW >= 2400; VTOP = -view.oy;
   UIZ = o.exp ? 1 : clamp(LW / 1500, 1, 1.45); KZ = 1; TZ = o.exp ? 1 : clamp(LW / 1900, 1, 1.18);
   const L = layers(c2d, view), vt = () => ctx.setTransform(view.k, 0, 0, view.k, 0, view.oy * view.k), px = () => ctx.setTransform(1, 0, 0, 1, 0, 0);
   px(); ctx.drawImage(L.back, 0, 0);
@@ -600,7 +600,7 @@ function render(c2d, view, t, o) {
     const drop = !o.still && o.pT < .8 ? -90 * Math.pow(1 - o.pT / .8, 2) : 0;
     krathong(info.type, x, y + bob + drop, s, t, Math.sin(t * 1.7) * .03);
     zoomed(() => headline(false)); card(info, o.still ? 1 : clamp((o.pT - .5) / 1.2, 0, 1));
-  } else if (o.mode === 'after' && info) { zoomed(() => headline(false)); card(info, 1); }
+  } else if (o.mode === 'fade' && info) { zoomed(() => headline()); card(info, clamp(o.fade, 0, 1)); }
   else zoomed(() => headline(true));
   if (o.exp) footer();
   px(); ctx.drawImage(L.vig, 0, 0);
@@ -638,8 +638,10 @@ function frame(now) {
   const t = now / 1000; let pT = 0;
   if (S.mode === 'playing') { pT = (now - S.t0) / 1000; if (pT >= END) { pT = END; finish(); } }
   else if (S.mode === 'done') pT = END;
+  let fade = 0;
+  if (S.mode === 'fade') { fade = 1 - (now - S.tDone) / 1200; if (fade <= 0) S.mode = 'idle'; }
   fwSounds(t);
-  render(ctx, VIEW, t, { mode: S.mode, pT, info: S.info });
+  render(ctx, VIEW, t, { mode: S.mode, pT, info: S.info, fade });
   if (S.rec && recCtx) render(recCtx, { lw: 1080, k: recCv.width / 1080, oy: 0 }, t, { mode: 'playing', pT, info: S.info, exp: true });
   requestAnimationFrame(frame);
 }
@@ -725,8 +727,9 @@ function boom() {
 function finish() {
   S.mode = 'done';
   if (!S.rec) addMine(S.info);
-  S.mode = 'after';
-  $('barDone').hidden = false; $('barIdle').hidden = true; setBusy(false);
+  /* back to the normal home view: the card fades out, the krathong keeps floating with the others */
+  S.mode = 'fade'; S.tDone = performance.now();
+  $('barIdle').hidden = false; $('vid').hidden = false; $('png').hidden = false; setBusy(false);
   toast('ลอยแล้ว ขอให้สมความปรารถนา');
   const cb = S.onDone; S.onDone = null; if (cb) cb();
 }
@@ -865,15 +868,14 @@ $('sound').onclick = () => { if (!A.C) { ensureAudio(); return; } A.on = !A.on; 
 
 /* ---------- UI ---------- */
 let toastT = 0;
-function toast(m, ms = 4000) { const bar = $('barDone').hidden ? $('barIdle') : $('barDone'); $('toast').style.bottom = (bar.offsetHeight + 8) + 'px'; $('toast').textContent = m; clearTimeout(toastT); if (m) toastT = setTimeout(() => $('toast').textContent = '', ms); }
-function setBusy(b) { ['go', 'vid', 'png', 'again'].forEach(i => $(i).disabled = b); }
+function toast(m, ms = 4000) { const bar = $('barIdle'); $('toast').style.bottom = bar.hidden ? 'calc(28px + env(safe-area-inset-bottom, 0px))' : (bar.offsetHeight + 8) + 'px'; $('toast').textContent = m; clearTimeout(toastT); if (m) toastT = setTimeout(() => $('toast').textContent = '', ms); }
+function setBusy(b) { ['go', 'vid', 'png', 'open'].forEach(i => $(i).disabled = b); }
 function openSheet(id) { $('scrim').hidden = false; $(id).hidden = false; const f = $(id).querySelector('input,button:not(.x)'); if (f && id === 'form') setTimeout(() => $('name').focus({ preventScroll: true }), 50); }
 function closeSheets() { $('scrim').hidden = true; $('form').hidden = true; $('result').hidden = true; $('wishModal').hidden = true; wishItem = null; }
 $('scrim').onclick = closeSheets;
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheets);
 addEventListener('keydown', e => { if (e.key === 'Escape') closeSheets(); });
 $('open').onclick = () => openSheet('form');
-$('again').onclick = () => openSheet('form');
 
 const thumbs = [];
 function buildTypes() {
@@ -903,7 +905,7 @@ function launch(rec) {
   if (!rec || !S.info) S.info = { type: S.type, name: $('name').value.trim() || 'ผู้ไม่ประสงค์ออกนาม', wish: $('wish').value.trim() || 'ขอให้ทุกความกังวลลอยไปกับสายน้ำ' };
   S.mode = 'playing'; S.t0 = performance.now(); setBusy(true); plop();
   { const t0 = S.t0 / 1000; FWX.length = 0; [1.2, 1.8, 2.5, 3.3].forEach((d, i) => FWX.push(fwSpec(Math.floor(t0 * 100) + i * 31, t0 + d))); }
-  $('barIdle').hidden = true; $('barDone').hidden = false;
+  $('barIdle').hidden = true;
   closeSheets(); toast(rec ? 'กำลังอัดวิดีโอ ประมาณ 15 วินาที' : 'กระทงกำลังลอยไปตามสายน้ำ…', 6000);
 }
 $('go').onclick = () => launch(false);
