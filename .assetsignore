@@ -1,0 +1,8 @@
+# Only the page and its logo are published; keep everything else private.
+.git
+.github
+.assetsignore
+wrangler.jsonc
+README.md
+supabase
+node_modules
