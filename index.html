@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ลอยกระทงออนไลน์</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +21,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
-body{background:var(--ink);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;overflow:hidden;
+body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
 .top{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:5}
@@ -71,6 +76,8 @@ textarea{min-height:84px;resize:vertical}
 @media (max-width:440px){ .bar{gap:8px} .bar .btn{padding:12px 18px;font-size:17px;min-height:46px} .bar .btn.ghost{padding:10px 12px;font-size:14.5px} .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))} }
 @media (max-width:360px){ .types{grid-template-columns:repeat(3,minmax(0,1fr))} }
 </style>
+</head>
+<body>
 
 <canvas id="c" role="img" aria-label="แม่น้ำยามค่ำคืน มีวัดอรุณ พระจันทร์เต็มดวง โคมลอย และกระทงลอยอยู่"></canvas>
 
@@ -1146,3 +1153,5 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawThumbs
 requestAnimationFrame(frame);
 })();
 </script>
+</body>
+</html>
