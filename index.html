@@ -307,19 +307,37 @@ function shop() {
   for (const dx of [-112, 112]) { ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + dx, deck - 120); ctx.lineTo(x + dx, deck - 104); ctx.stroke(); glow(x + dx, deck - 92, 46, '255,120,80', .55); ctx.fillStyle = '#e2483a'; ell(x + dx, deck - 92, 10, 13); ctx.fill(); ctx.fillStyle = '#ffd166'; ctx.fillRect(x + dx - 6, deck - 106, 12, 3); }
   glow(x, deck - 70, 160, '255,180,100', .3);
 }
-/* the vendor's rowing boat, bobbing beside the shop */
-function boat(t) {
-  const x = shopX() + 190, y = HY + 58 + Math.sin(t * 1.3) * 3, tilt = Math.sin(t * 1.1) * .025;
-  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
-  ctx.fillStyle = 'rgba(255,190,110,.12)'; ell(0, 14, 120, 14); ctx.fill();
-  ctx.fillStyle = '#4a2c18'; ctx.beginPath(); ctx.moveTo(-110, -16); ctx.quadraticCurveTo(-60, 14, 0, 14); ctx.quadraticCurveTo(60, 14, 110, -18); ctx.lineTo(96, -8); ctx.quadraticCurveTo(0, 2, -96, -6); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#7a4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-104, -14); ctx.quadraticCurveTo(0, -2, 104, -16); ctx.stroke();
-  for (let i = 0; i < 9; i++) { ctx.fillStyle = ['#ff9d0a', '#e2483a', '#9bd96e', '#ffd166', '#c2407f'][i % 5]; ell(-60 + i * 11, -12 - (i % 2) * 6, 7, 6); ctx.fill(); }
-  ctx.fillStyle = '#1a1020'; ctx.fillRect(32, -50, 22, 40); ell(43, -56, 9, 9); ctx.fill();
-  ctx.fillStyle = '#c9a36a'; ctx.beginPath(); ctx.moveTo(43, -76); ctx.lineTo(70, -56); ctx.lineTo(16, -56); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(52, -34); ctx.lineTo(96, 24); ctx.stroke();
-  glow(-80, -40, 50, '255,200,120', .55); ctx.fillStyle = '#ffd98a'; ell(-80, -40, 6, 8); ctx.fill(); ctx.strokeStyle = '#2e1c14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-80, -48); ctx.lineTo(-80, -10); ctx.stroke();
-  ctx.restore();
+/* bank decorations: poles strung with festoon lights and Thai-flag bunting, kept clear of the temple */
+function festoon(x0, x1, y, sag, cols, bulb) {
+  ctx.strokeStyle = 'rgba(20,12,30,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, y); ctx.quadraticCurveTo((x0 + x1) / 2, y + sag * 2, x1, y); ctx.stroke();
+  const n = Math.max(2, Math.floor((x1 - x0) / 24));
+  for (let i = 1; i < n; i++) {
+    const k = i / n, bx = lerp(x0, x1, k), by = y + 4 * sag * k * (1 - k), c = cols[i % cols.length];
+    if (bulb) { glow(bx, by + 3, 16, c, .55); ctx.fillStyle = `rgb(${c})`; ell(bx, by + 4, 3.2, 4); ctx.fill(); }
+    else { ctx.fillStyle = `rgb(${c})`; ctx.beginPath(); ctx.moveTo(bx - 8, by); ctx.lineTo(bx + 8, by); ctx.lineTo(bx, by + 16); ctx.closePath(); ctx.fill(); }
+  }
+}
+function bankLights(cx) {
+  const by = HY - 28, skip = 640 * TZ, poles = [];
+  for (let x = 20; x < LW + 40; x += 210) { if (x > cx - skip && x < cx + skip) continue; poles.push(x); }
+  ctx.fillStyle = '#2e1c14'; for (const x of poles) ctx.fillRect(x - 3, by - 150, 6, 150);
+  for (let i = 0; i + 1 < poles.length; i++) {
+    const a = poles[i], b = poles[i + 1]; if (b - a > 260) continue;
+    festoon(a, b, by - 146, 20, ['237,41,57', '255,255,255', '45,42,74'], false);
+    festoon(a, b, by - 110, 16, i % 2 ? ['255,214,120', '255,140,90', '140,220,255'] : ['255,120,170', '255,230,150', '170,255,190'], true);
+  }
+}
+/* ferris wheel behind the bank, wide screens only */
+function wheel(t) {
+  if (!WIDE) return;
+  const wx = CX - LW * .43, wy = HY - 230, R = 170, a0 = t * .12;
+  ctx.strokeStyle = 'rgba(40,24,60,.95)'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(wx - 90, HY - 28); ctx.lineTo(wx, wy); ctx.lineTo(wx + 90, HY - 28); ctx.stroke();
+  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,200,140,.55)'; ell(wx, wy, R, R); ctx.stroke();
+  ctx.lineWidth = 1.5; for (let i = 0; i < 16; i++) { const a = a0 + i / 16 * TAU; ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * R, wy + Math.sin(a) * R); ctx.stroke(); }
+  for (let i = 0; i < 32; i++) { const a = a0 + i / 32 * TAU, on = (Math.floor(t * 3) + i) % 3 === 0; ctx.fillStyle = on ? '#fff1b0' : ['#ff7aa8', '#7fd3ff', '#ffd166'][i % 3]; ell(wx + Math.cos(a) * R, wy + Math.sin(a) * R, 3.5, 3.5); ctx.fill(); }
+  const cab = ['#d1453b', '#2f6fb5', '#e0a526', '#2f9a6a', '#c2407f'];
+  for (let i = 0; i < 8; i++) { const a = a0 + i / 8 * TAU, cx = wx + Math.cos(a) * R, cy = wy + Math.sin(a) * R; ctx.fillStyle = cab[i % cab.length]; rrect(cx - 13, cy + 4, 26, 20, 5); ctx.fill(); ctx.fillStyle = 'rgba(255,220,150,.8)'; ctx.fillRect(cx - 8, cy + 9, 16, 6); }
+  glow(wx, wy, 60, '255,220,150', .5);
 }
 const templeX = () => CX + 230 + (WIDE ? LW * .1 : 0);
 function temple(flip) {
@@ -329,6 +347,7 @@ function temple(flip) {
   if (!flip) { glow(cx, by - 220, 620, '255,200,90', .3); glow(cx, by - 80, 360, '255,230,160', .25); }
   ctx.fillStyle = '#0d2622';
   for (const tr of TREES) { const x = tr.x * LW; if (Math.abs(x - cx) < 360 * TZ) continue; tree(x, HY - 20, tr.h, tr.r); }
+  bankLights(cx);
   ctx.save(); ctx.translate(cx, HY); ctx.scale(TZ, TZ); ctx.translate(-cx, -HY);
   for (const [x, w, h] of [[cx - 125, 70, 210], [cx + 125, 70, 210]]) prang(x, by, w, h, true);
   for (const [x, w, h] of [[cx - 255, 100, 330], [cx + 255, 100, 330]]) prang(x, by, w, h, true);
@@ -551,9 +570,9 @@ function render(c2d, view, t, o) {
   UIZ = o.exp ? 1 : clamp(LW / 1500, 1, 1.45); KZ = 1; TZ = o.exp ? 1 : clamp(LW / 1900, 1, 1.18);
   const L = layers(c2d, view), vt = () => ctx.setTransform(view.k, 0, 0, view.k, 0, view.oy * view.k), px = () => ctx.setTransform(1, 0, 0, 1, 0, 0);
   px(); ctx.drawImage(L.back, 0, 0);
-  vt(); fireworks(t); lanterns(t);
+  vt(); fireworks(t); lanterns(t); wheel(t);
   px(); ctx.drawImage(L.temple, 0, 0); ctx.drawImage(L.river, 0, 0); ctx.drawImage(L.shop, 0, 0);
-  vt(); river(t); fwReflect(t); boat(t); others(t);
+  vt(); river(t); fwReflect(t); others(t);
   if (!o.exp) drawCommunity(t);
   const info = o.info, playing = o.mode === 'playing' || o.mode === 'done';
   if (playing && info) {
