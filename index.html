@@ -65,6 +65,7 @@ textarea{min-height:84px;resize:vertical}
 .modal .x{position:absolute;top:10px;right:10px;color:#4a2c10;border-color:#e6cfa8}
 .btn.brown{background:#a8622a;color:#fff;box-shadow:none;margin-top:6px}
 .modal .btn:disabled{opacity:.75}
+.steps{margin:0;padding-left:1.3em;color:var(--fg);font-size:15px;display:flex;flex-direction:column;gap:4px}
 .media img,.media video{width:100%;max-height:52vh;object-fit:contain;border-radius:12px;background:#000;display:block}
 @media (max-width:520px){ .types{grid-template-columns:repeat(4,minmax(0,1fr))} }
 @media (max-width:440px){ .bar{gap:8px} .bar .btn{padding:12px 18px;font-size:17px;min-height:46px} .bar .btn.ghost{padding:10px 12px;font-size:14.5px} .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))} }
@@ -123,8 +124,14 @@ textarea{min-height:84px;resize:vertical}
 <section class="sheet" id="result" hidden aria-labelledby="resTitle" role="dialog" aria-modal="true">
   <div class="shead"><h2 id="resTitle">ไฟล์สำหรับ Story</h2><button type="button" class="x" data-close aria-label="ปิด">×</button></div>
   <div class="media" id="media"></div>
-  <button type="button" class="btn" id="save">บันทึกลงเครื่อง</button>
-  <p class="hint">ถ้าปุ่มบันทึกใช้ไม่ได้ ให้กดค้างที่รูปหรือวิดีโอแล้วเลือกบันทึก จากนั้นเปิดจากคลังภาพไปลง IG หรือ Facebook Story</p>
+  <button type="button" class="btn" id="save">บันทึกรูปไปลง Story</button>
+  <button type="button" class="btn ghost" id="toVideo">อยากได้เป็นวิดีโอ (ประมาณ 15 วินาที)</button>
+  <ol class="steps">
+    <li>กดปุ่มด้านบนเพื่อบันทึก ถ้ามีเมนูแชร์ขึ้นมา เลือก Instagram ได้เลย</li>
+    <li>เปิด Instagram แล้วกดสร้าง Story</li>
+    <li>เลือกรูปหรือวิดีโอล่าสุดจากคลังภาพ</li>
+  </ol>
+  <p class="hint">ถ้าปุ่มบันทึกใช้ไม่ได้ ให้กดค้างที่รูปแล้วเลือกบันทึกรูปภาพ</p>
 </section>
 
 <script>
@@ -731,6 +738,7 @@ function finish() {
   S.mode = 'fade'; S.tDone = performance.now();
   $('barIdle').hidden = false; $('vid').hidden = false; $('png').hidden = false; setBusy(false);
   toast('ลอยแล้ว ขอให้สมความปรารถนา');
+  if (!S.rec) setTimeout(() => { if (S.mode !== 'playing') stillPng(); }, 1300);
   const cb = S.onDone; S.onDone = null; if (cb) cb();
 }
 
@@ -934,7 +942,7 @@ async function stillPng() {
   const now = performance.now() / 1000;
   render(o.getContext('2d'), { lw: 1080, k: 1, oy: 0 }, now, { mode: 'done', pT: END, info: S.info, exp: true, still: true });
   const blob = await new Promise(r => o.toBlob(r, 'image/png'));
-  showResult(blob, 'loykrathong.png', 'image');
+  if (blob) showResult(blob, 'loykrathong.png', 'image');
 }
 let lastUrl = null, pending = null;
 function showResult(blob, filename, kind) {
@@ -943,17 +951,24 @@ function showResult(blob, filename, kind) {
   const m = $('media'); m.textContent = '';
   const el = document.createElement(kind === 'video' ? 'video' : 'img'); el.src = lastUrl;
   if (kind === 'video') { el.controls = true; el.playsInline = true; el.loop = true; } else el.alt = 'รูปกระทงของคุณสำหรับ Story';
-  m.appendChild(el); $('resTitle').textContent = kind === 'video' ? 'วิดีโอสำหรับ Story' : 'รูปสำหรับ Story';
+  m.appendChild(el); $('resTitle').textContent = 'แชร์ลง IG Story';
+  $('save').textContent = kind === 'video' ? 'บันทึกวิดีโอไปลง Story' : 'บันทึกรูปไปลง Story'; $('toVideo').hidden = kind === 'video';
   openSheet('result');
 }
+/* share: the device share sheet where the browser allows it (Instagram appears there), otherwise save the file */
 $('save').onclick = async () => {
   if (!pending) return;
+  try {
+    const file = new File([pending.blob], pending.filename, { type: pending.blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); toast('แชร์แล้ว'); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
   let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) {}
   if (!dl) { toast('บันทึกอัตโนมัติไม่ได้ในหน้านี้ กดค้างที่รูปหรือวิดีโอเพื่อบันทึก'); return; }
   try { await dl.save({ filename: pending.filename, data: pending.blob }); toast('บันทึกแล้ว เปิดจากคลังภาพไปลง Story ได้เลย'); }
   catch (e) { toast(e && e.code === 'declined' ? 'ยกเลิกการบันทึก' : 'บันทึกไม่สำเร็จ กดค้างที่รูปหรือวิดีโอเพื่อบันทึก'); }
 };
 $('vid').onclick = recordVideo;
+$('toVideo').onclick = () => { closeSheets(); recordVideo(); };
 $('png').onclick = stillPng;
 
 /* ---------- shared river: everyone's krathongs ---------- */
