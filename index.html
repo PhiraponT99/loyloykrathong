@@ -1042,7 +1042,7 @@ function drawCommunity(t) {
   }
 }
 /* ---------- public backend: Supabase, used when the page runs outside claude.ai (GitHub Pages) ---------- */
-const SUPABASE = { url: '', anonKey: '' };
+const SUPABASE = { url: 'https://dmeoovikfjdqthrjzyma.supabase.co', anonKey: 'sb_publishable_E9pGIYrbMARBL7lBOpJw1g_efZw-s18' };
 const SB = { on: false };
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
 function clientId() { let id = LS.get('lk.client', null); if (typeof id !== 'string' || id.length < 8) { id = uuid(); LS.set('lk.client', id); } return id; }
