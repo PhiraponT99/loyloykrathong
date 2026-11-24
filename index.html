@@ -845,7 +845,7 @@ function ensureAudio() {
   const send = C.createGain(); send.gain.value = .5; send.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(A.master);
   A.out = C.createGain(); A.out.connect(A.master); A.out.connect(send);
   const ns = C.createBufferSource(); ns.buffer = A.noise; ns.loop = true; const bp = C.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = .5; const ng = C.createGain(); ng.gain.value = .02; ns.connect(bp); bp.connect(ng); ng.connect(A.master); ns.start();
-  A.next = C.currentTime + .2; A.step = 0; A.loop = 0; A.on = true;
+  A.next = C.currentTime + .2; A.step = 0; A.loop = 0; A.on = true; A.startedAt = performance.now();
   setInterval(schedule, 50); schedule(); syncSound();
 }
 function schedule() {
@@ -877,12 +877,12 @@ function syncSound() {
   $('soundTxt').textContent = on ? 'ปิดเพลง' : 'เปิดเพลง'; $('sound').setAttribute('aria-pressed', String(!!on));
   $('wave').style.display = on ? '' : 'none';
 }
-let primed = false;
-function prime() { if (primed) return; primed = true; ensureAudio(); if ($('toast').textContent.startsWith('แตะ')) toast(''); }
-addEventListener('pointerdown', prime, { once: false, capture: true });
-addEventListener('keydown', prime, { capture: true });
+/* start (or resume) audio on any interaction; Android Chrome only grants it on pointerup/touchend, desktops on pointerdown */
+function prime() { ensureAudio(); if ($('toast').textContent.startsWith('แตะ')) toast(''); }
+for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, prime, { capture: true });
 document.addEventListener('visibilitychange', () => { if (!A.C) return; if (document.hidden) A.C.suspend(); else if (A.on) A.C.resume(); });
-$('sound').onclick = () => { if (!A.C) { ensureAudio(); return; } A.on = !A.on; syncSound(); };
+/* the tap that just started the music must not also mute it */
+$('sound').onclick = () => { if (!A.C || performance.now() - (A.startedAt || 0) < 1000) { ensureAudio(); syncSound(); return; } A.on = !A.on; syncSound(); };
 
 /* ---------- UI ---------- */
 let toastT = 0;
